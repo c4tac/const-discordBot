@@ -48,7 +48,7 @@ async def doc(ctx):
     embed.add_field(name="$news", value="This command displays the latest news for the given keyword. Usage: $news [keyword]")
     embed.add_field(name="$weather", value="This command dispalys the weather in you city Usage: $weather [city_name]")
     embed.add_field(name="$rnum", value="This command sends a random number between 1 and a random number you want. Usage: $rnum [any number]")
-    embed.add_field(name="$remind", value="This command lets your create a reminder. Usage: $remind [time] [message]")
+    embed.add_field(name="$remind", value="This command lets your create a reminder. Usage: $remind [time in seconds] [message]")
     await ctx.send(embed=embed)
 
 
@@ -85,10 +85,12 @@ async def play(ctx, url: str):
             voice_client = ctx.voice_client
             await voice_client.disconnect()
         
-    except discord.errors.ClientException:
-        await voice_client.disconnect()
     except AttributeError:
         await ctx.send(f"johin a voice channel")
+    except UnboundLocalError:
+        await ctx.send(f"music is allready playing please use the $stop command and try again")
+    except Exception as e:
+        print(f"unexpected error: {e}")
 
 @bot.command()
 async def pause(ctx):
@@ -98,6 +100,7 @@ async def pause(ctx):
         await ctx.send(f"Paused the current song {ctx.message.author.mention}.")
     else:
         await ctx.send(f"Not playing any song {ctx.message.author.mention}.")
+
 @bot.command()
 async def resume(ctx):
     voice_client = ctx.guild.voice_client
@@ -157,24 +160,18 @@ async def imggen(ctx, *, text: str = None):
 
 @bot.command()
 async def weather(ctx, *, city: str = None):
-    try:
-        weather_data = requests.get(
-                f"https://api.openweathermap.org/data/2.5/weather?q={city}&units=imperial&APPID={weather_key}")
-        weather = weather_data.json()['weather'][0]['main']
-        temp = round(weather_data.json()['main']['temp'])
-        celsius = (temp - 32) * 5/9
-        int_celsius = int(celsius)
-
-        if weather_data.json()['code'] == '404':
-           await ctx.send(f"city {city} not found")
-
-        await ctx.send(f"""
-The Weather in {city} is {weather}
+    weather_data = requests.get(f"https://api.openweathermap.org/data/2.5/weather?q={city}&units=imperial&APPID={weather_key}")
+    if weather_data.json()['cod'] == '404':
+       await ctx.send(f"city {city} not found")
+    weather = weather_data.json()['weather'][0]['main']
+    temp = round(weather_data.json()['main']['temp'])
+    country_name = weather_data.json()['sys']['country']
+    celsius = (temp - 32) * 5/9
+    int_celsius = int(celsius)
+    await ctx.send(f"""
+The Weather in {city} is {weather} , country: {country_name}
 The temperature in {city} is around: {temp}ºF or {int_celsius}°C
 """)
-    except KeyError:
-        print("are you missing api key?")
-        await ctx.send(f"oops somthing went wong i think {city} does not exist")
 
 @bot.command()
 async def rnum(ctx , *, randeom_num: int = None):
@@ -197,7 +194,7 @@ from the {server_name} server
     """)
     except ValueError:
         await ctx.send(f"{time} is not a number please try again with a valid number ~ {ctx.message.author.mention}")
+    except:
+        await ctx.send(f"oops somthing went wong please try again later {ctx.message.author.mention}")
 
-#@bot.command()
-#async def 
 bot.run(discordtoken)
