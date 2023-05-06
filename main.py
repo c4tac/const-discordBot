@@ -6,13 +6,13 @@ from dotenv import load_dotenv
 import os
 from requests import get
 import openai
+from discord.ext.commands import MemberConverter
 import json
 import requests
-import re
 import yt_dlp
 from discord.voice_client import VoiceClient
 from pydub import AudioSegment
-from googletrans import Translator
+import asyncio
 load_dotenv()
 discordtoken = os.getenv("TOKEN")
 openai_api_key = os.getenv("API_KEY")
@@ -24,22 +24,17 @@ intents = discord.Intents.default()
 intents.message_content = True
 bot = commands.Bot(command_prefix='$', intents=intents)
 
+
 yt_dl_opts = {'format': 'bestaudio/best'}
 ytdl = yt_dlp.YoutubeDL(yt_dl_opts)
 
 ffmpeg_options = {'options': "-vn"}
 
-#with open('badworlds.txt', 'r') as f:
-#    badworlds = f.read().splitlines()
-
 @bot.event
-async def on_ready():
+async def on_ready() -> None:
     print("bot is ready")
 
-#@bot.event
-#async def on_message(message):
-    #code//
-
+        
 @bot.command()
 async def doc(ctx):
     embed = discord.Embed(title="List of available commands:", color=discord.Color.blue())
@@ -51,7 +46,9 @@ async def doc(ctx):
     embed.add_field(name="$stop", value="This command stops the currently playing YouTube video. Usage: $stop")
     embed.add_field(name="$rdog", value="This command sends a random dog image. Usage: $rdog")
     embed.add_field(name="$news", value="This command displays the latest news for the given keyword. Usage: $news [keyword]")
-    embed.add_field(name="$weather", value="this command dispalys the weather in you city Usage: $weather [city_name]")
+    embed.add_field(name="$weather", value="This command dispalys the weather in you city Usage: $weather [city_name]")
+    embed.add_field(name="$rnum", value="This command sends a random number between 1 and a random number you want. Usage: $rnum [any number]")
+    embed.add_field(name="$remind", value="This command lets your create a reminder. Usage: $remind [time] [message]")
     await ctx.send(embed=embed)
 
 
@@ -80,11 +77,10 @@ async def meme(ctx):
 async def play(ctx, url: str):
     try:
         voice_client = await ctx.author.voice.channel.connect()
+        voice_client.encoder_options = {'before_options': '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5', 'options': '-vn'}
         info = ytdl.extract_info(url, download=False)
         audio_url = info["url"]
         voice_client.play(discord.FFmpegPCMAudio(audio_url))
-        #sound = AudioSegment.from_file(audio_url, format="mp3")youtube_dl
-        #voice_client.play(discord.FFmpegPCMAudio(sound))
         if voice_client is None:
             voice_client = ctx.voice_client
             await voice_client.disconnect()
@@ -180,4 +176,28 @@ The temperature in {city} is around: {temp}ºF or {int_celsius}°C
         print("are you missing api key?")
         await ctx.send(f"oops somthing went wong i think {city} does not exist")
 
+@bot.command()
+async def rnum(ctx , *, randeom_num: int = None):
+    try:
+        randrom_number = random.randint(1, randeom_num)
+        await ctx.send(f"your random number is {randrom_number} ~ {ctx.message.author.mention}")
+    except ValueError:
+        await ctx.send(f"{randeom_num} is not a number please try again with a valid number ~ {ctx.message.author.mention}")
+
+@bot.command()
+async def remind(ctx, time, *, message):
+    server_name = ctx.guild.name
+    try:
+        await ctx.send(f"your reminder is set you will get notifed {time} seconds")
+        await asyncio.sleep(int(time))
+        await ctx.author.send(f"""
+reminder: {message}
+
+from the {server_name} server
+    """)
+    except ValueError:
+        await ctx.send(f"{time} is not a number please try again with a valid number ~ {ctx.message.author.mention}")
+
+#@bot.command()
+#async def 
 bot.run(discordtoken)
