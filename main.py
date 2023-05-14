@@ -46,13 +46,16 @@ async def doc(ctx):
     embed.add_field(name="$stop", value="This command stops the currently playing YouTube video. Usage: $stop")
     embed.add_field(name="$rdog", value="This command sends a random dog image. Usage: $rdog")
     embed.add_field(name="$news", value="This command displays the latest news for the given keyword. Usage: $news [keyword]")
-    embed.add_field(name="$weather", value="This command dispalys the weather in you city Usage: $weather [city_name]")
+    embed.add_field(name="$imggen", value="This command generates an image from the given text. Usage: $imggen [text]")
+    embed.add_field(name="$weather", value="This command dispalys the weather in you city Usage: $weather [city name]")
     embed.add_field(name="$rnum", value="This command sends a random number between 1 and a random number you want. Usage: $rnum [any number]")
     embed.add_field(name="$remind", value="This command lets your create a reminder. Usage: $remind [time in seconds] [message]")
+    embed.add_field(name="$math", value="A simple calculator. Usage: $math [Number + Number]")
+    embed.add_field(name="$ping", value="This Command lets you check the bot latency. Usage: $ping")
     await ctx.send(embed=embed)
 
 
-@bot.command()
+@bot.command(help="This command lets you have a conversation with the bot. Usage: $chat [message]")
 async def chat(ctx, *, message: str = None):
     if message is None:
         await ctx.send(f"please enter somthing after **$chat** {ctx.message.author.mention}.")
@@ -65,7 +68,7 @@ async def chat(ctx, *, message: str = None):
         await ctx.send(f"**AuthenticationError** Incorrect API key provided You can find your API key at https://platform.openai.com/account/api-keys. And please make your that you have internet connection")
         
 
-@bot.command()
+@bot.command(help="This command sends a random meme. Usage: $meme")
 async def meme(ctx):
     content = get("https://meme-api.com/gimme").text
     data = json.loads(content,)
@@ -73,7 +76,7 @@ async def meme(ctx):
     await ctx.send(embed=meme)
     return
 
-@bot.command()
+@bot.command(help="This command plays a YouTube video in the voice channel you are in. Usage: $play [YouTube video URL]")
 async def play(ctx, url: str):
     try:
         voice_client = await ctx.author.voice.channel.connect()
@@ -81,10 +84,7 @@ async def play(ctx, url: str):
         info = ytdl.extract_info(url, download=False)
         audio_url = info["url"]
         voice_client.play(discord.FFmpegPCMAudio(audio_url))
-        if voice_client is None:
-            voice_client = ctx.voice_client
-            await voice_client.disconnect()
-        
+
     except AttributeError:
         await ctx.send(f"johin a voice channel")
     except UnboundLocalError:
@@ -92,7 +92,7 @@ async def play(ctx, url: str):
     except Exception as e:
         print(f"unexpected error: {e}")
 
-@bot.command()
+@bot.command(help="This command pauses the currently playing YouTube video. Usage: $pause")
 async def pause(ctx):
     voice_client = ctx.guild.voice_client
     if voice_client and voice_client.is_playing():
@@ -101,7 +101,7 @@ async def pause(ctx):
     else:
         await ctx.send(f"Not playing any song {ctx.message.author.mention}.")
 
-@bot.command()
+@bot.command(help="This command resumes the currently paused YouTube video. Usage: $resume")
 async def resume(ctx):
     voice_client = ctx.guild.voice_client
     if voice_client:
@@ -110,15 +110,16 @@ async def resume(ctx):
     else:
         await ctx.send("fNot playing any song {ctx.message.author.mention}.")
 
-@bot.command()
+@bot.command(help="This command stops the currently playing YouTube video. Usage: $stop")
 async def stop(ctx):
        try:
             voice_client = ctx.voice_client
             await voice_client.disconnect()
        except:
-            await ctx.send(f"not in a voice channel dont fool me {ctx.message.author.mention}.")
+            await ctx.send(f"not in a voice channel {ctx.message.author.mention}.")
 
-@bot.command()
+
+@bot.command(help="This command sends a random dog image. Usage: $rdog")
 async def rdog(ctx):
     const = requests.get("https://random.dog/woof.json")
     stuff = json.loads(const.text)
@@ -127,7 +128,7 @@ async def rdog(ctx):
     await ctx.send(embed=embed)
 
 
-@bot.command()
+@bot.command(help="This command displays the latest news for the given keyword. Usage: $news [keyword]")
 async def news(ctx, innews):
     news = requests.get(f"https://newsapi.org/v2/everything?q={innews}&apiKey={news_key}").json()
     thnews = news["articles"]
@@ -141,7 +142,7 @@ async def news(ctx, innews):
     else:
         await ctx.send(f"{innews} not found please try again")
 
-@bot.command()
+@bot.command(help="This command generates an image from the given text. Usage: $imggen [text]")
 async def imggen(ctx, *, text: str = None):
     try:
         if text is None:
@@ -158,7 +159,7 @@ async def imggen(ctx, *, text: str = None):
     except:
         await ctx.send("nsfw images are not allowed")
 
-@bot.command()
+@bot.command(help="This command dispalys the weather in you city Usage: $weather [city name]")
 async def weather(ctx, *, city: str = None):
     weather_data = requests.get(f"https://api.openweathermap.org/data/2.5/weather?q={city}&units=imperial&APPID={weather_key}")
     if weather_data.json()['cod'] == '404':
@@ -173,7 +174,7 @@ The Weather in {city} is {weather} , country: {country_name}
 The temperature in {city} is around: {temp}ºF or {int_celsius}°C
 """)
 
-@bot.command()
+@bot.command(help="This command sends a random number between 1 and a random number you want. Usage: $rnum [any number]")
 async def rnum(ctx , *, randeom_num: int = None):
     try:
         randrom_number = random.randint(1, randeom_num)
@@ -181,7 +182,7 @@ async def rnum(ctx , *, randeom_num: int = None):
     except ValueError:
         await ctx.send(f"{randeom_num} is not a number please try again with a valid number ~ {ctx.message.author.mention}")
 
-@bot.command()
+@bot.command(help="This command lets you set a reminder. Usage: $remind [time in seconds]")
 async def remind(ctx, time, *, message):
     server_name = ctx.guild.name
     try:
@@ -196,5 +197,21 @@ from the {server_name} server
         await ctx.send(f"{time} is not a number please try again with a valid number ~ {ctx.message.author.mention}")
     except:
         await ctx.send(f"oops somthing went wong please try again later {ctx.message.author.mention}")
+
+@bot.command(help="This command lets you calculate the given expression. Usage: $math [expression]")
+async def math(ctx, *,  expression: str = None):
+    try:
+        await ctx.send(f"{eval(expression)}")
+    except SyntaxError:
+        await ctx.send(f"{expression} is not a valid expression, Supported expressions '+ for addition', '- for subtraction', '* for Multiplication' and '/ for Division'  there are other too but thiese are the most Common~ {ctx.message.author.mention}")
+    except NameError:
+        await ctx.send(f"{expression} NameError please make sure you are using the correct syntax~ {ctx.message.author.mention}")
+    except ZeroDivisionError:
+        await ctx.send(f"number/0 is not allowed , Didn't you pay attention in math class? {ctx.message.author.mention}")
+
+@bot.command(help="This Command lets you check the bot latency. Usage: $ping")
+async def ping(ctx):
+    await ctx.send(f"Bot latency: {round(bot.latency * 1000)}ms")
+
 
 bot.run(discordtoken)
