@@ -24,6 +24,17 @@ for news api visit **https://newsapi.org/**
 > only Requests 1,000 are allowed per day for the news api
 
 for the open weather API key visit **https://openweathermap.org/appid**
+
+# Features
+
+* Play Music 
+
+* **Chat Command**: The bot can have conversations with users using the `$chat` command.
+* **Meme Command**: The bot can send a random meme using the `$meme` command.
+* **Play Command**: The bot can play YouTube, SoundCloud and etc videos in the voice channel using the `$play` command.
+* **Vote Command**: The bot can create a poll that users can vote on using the `$vote` command.
+>There are many other cool commands too that you can use.
+
 # Run 
 
 **Windows**
@@ -43,11 +54,7 @@ give the bot a <a  href="https://discord.com/api/oauth2/authorize?client_id=1068
 ` https://discord.com/api/oauth2/authorize?client_id=1068497688628305970&permissions=8&scope=bot `
 
 # issues
-`$translate` does not work properly
-
 `$play` you cant play soutube shorts and the bot wont disconnect automatically
 
 # usage
 you can use the `$doc` command for the documentation
-
-all other  information is <a  href="https://github.com/forceCpp/openDiscordBot/blob/main/documentation.txt">hier</a> available
