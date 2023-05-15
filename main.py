@@ -13,6 +13,7 @@ import yt_dlp
 from discord.voice_client import VoiceClient
 from pydub import AudioSegment
 import asyncio
+import logging
 load_dotenv()
 discordtoken = os.getenv("TOKEN")
 openai_api_key = os.getenv("API_KEY")
@@ -32,9 +33,20 @@ ffmpeg_options = {'options': "-vn"}
 
 @bot.event
 async def on_ready() -> None:
-    print("bot is ready")
+    logging.basicConfig(filename='discordBot.errors', level=logging.ERROR)
+    print("Bot is online!")
+    print("error will be logged to a file named discordBot.errors")
+    print("-"*100)
 
-        
+@bot.event
+async def on_member_join(member):
+    # Customize the welcome message here
+    welcome_channel = discord.utils.get(member.guild.channels, name="welcome")
+    welcome_message = f"Welcome {member.mention} to the server! We're glad to have you here."
+
+    if welcome_channel is not None:
+        await welcome_channel.send(welcome_message)
+
 @bot.command()
 async def doc(ctx):
     embed = discord.Embed(title="List of available commands:", color=discord.Color.blue())
@@ -52,6 +64,8 @@ async def doc(ctx):
     embed.add_field(name="$remind", value="This command lets your create a reminder. Usage: $remind [time in seconds] [message]")
     embed.add_field(name="$math", value="A simple calculator. Usage: $math [Number + Number]")
     embed.add_field(name="$ping", value="This Command lets you check the bot latency. Usage: $ping")
+    embed.add_field(name="$vote", value="Create a poll that users can vote on using reactions. Usage: $vote '[title]' [description]")
+    embed.add_field(name="$check_votes", value="Check the number of thumbs up and thumbs down votes for a given voting poll with the specified embed title. Usage: $check_votes '[embed_title]'")
     await ctx.send(embed=embed)
 
 
@@ -64,8 +78,9 @@ async def chat(ctx, *, message: str = None):
         response = openai.Completion.create(engine="text-davinci-002", prompt=message)
         await ctx.send(f"{response.choices[0].text} ~{ctx.message.author.mention}")
         return
-    except:
-        await ctx.send(f"**AuthenticationError** Incorrect API key provided You can find your API key at https://platform.openai.com/account/api-keys. And please make your that you have internet connection")
+    except Exception as e:
+        await ctx.send(f"opps something went wrong. Please try again.")
+        logging.error(f"Error in {ctx.command}: {e}")
         
 
 @bot.command(help="This command sends a random meme. Usage: $meme")
@@ -90,7 +105,7 @@ async def play(ctx, url: str):
     except UnboundLocalError:
         await ctx.send(f"music is allready playing please use the $stop command and try again")
     except Exception as e:
-        print(f"unexpected error: {e}")
+        logging.error(f"Error in {ctx.command}: {e}")
 
 @bot.command(help="This command pauses the currently playing YouTube video. Usage: $pause")
 async def pause(ctx):
@@ -108,7 +123,7 @@ async def resume(ctx):
         voice_client.resume()
         await ctx.send(f"resume the current song {ctx.message.author.mention}.")
     else:
-        await ctx.send("fNot playing any song {ctx.message.author.mention}.")
+        await ctx.send(f"Not playing any song {ctx.message.author.mention}.")
 
 @bot.command(help="This command stops the currently playing YouTube video. Usage: $stop")
 async def stop(ctx):
@@ -121,12 +136,15 @@ async def stop(ctx):
 
 @bot.command(help="This command sends a random dog image. Usage: $rdog")
 async def rdog(ctx):
-    const = requests.get("https://random.dog/woof.json")
-    stuff = json.loads(const.text)
-    embed = discord.Embed(title=f"URL: {stuff['url']}", color = discord.Color.random())
-    embed.set_image(url=f"{stuff['url']}")
-    await ctx.send(embed=embed)
-
+    try:
+        const = requests.get("https://random.dog/woof.json")
+        stuff = json.loads(const.text)
+        embed = discord.Embed(title=f"URL: {stuff['url']}", color = discord.Color.random())
+        embed.set_image(url=f"{stuff['url']}")
+        await ctx.send(embed=embed)
+    except Exception as e:
+        logging.error(f"Error in {ctx.command}: {e}")
+        await ctx.send(f"Please make sure that you have internet connection")
 
 @bot.command(help="This command displays the latest news for the given keyword. Usage: $news [keyword]")
 async def news(ctx, innews):
@@ -156,23 +174,27 @@ async def imggen(ctx, *, text: str = None):
 
         )
         await ctx.send(response["data"][0]["url"])
-    except:
+    except Exception as e:
         await ctx.send("nsfw images are not allowed")
+        logging.error(f"Error in {ctx.command}: {e}")
 
 @bot.command(help="This command dispalys the weather in you city Usage: $weather [city name]")
 async def weather(ctx, *, city: str = None):
-    weather_data = requests.get(f"https://api.openweathermap.org/data/2.5/weather?q={city}&units=imperial&APPID={weather_key}")
-    if weather_data.json()['cod'] == '404':
-       await ctx.send(f"city {city} not found")
-    weather = weather_data.json()['weather'][0]['main']
-    temp = round(weather_data.json()['main']['temp'])
-    country_name = weather_data.json()['sys']['country']
-    celsius = (temp - 32) * 5/9
-    int_celsius = int(celsius)
-    await ctx.send(f"""
-The Weather in {city} is {weather} , country: {country_name}
-The temperature in {city} is around: {temp}ºF or {int_celsius}°C
-""")
+    try:
+        weather_data = requests.get(f"https://api.openweathermap.org/data/2.5/weather?q={city}&units=imperial&APPID={weather_key}")
+        if weather_data.json()['cod'] == '404':
+           await ctx.send(f"city {city} not found")
+        weather = weather_data.json()['weather'][0]['main']
+        temp = round(weather_data.json()['main']['temp'])
+        country_name = weather_data.json()['sys']['country']
+        celsius = (temp - 32) * 5/9
+        int_celsius = int(celsius)
+        await ctx.send(f"""
+    The Weather in {city} is {weather} , country: {country_name}
+    The temperature in {city} is around: {temp}ºF or {int_celsius}°C
+    """)
+    except Exception as e:
+        logging.error(f"Error in {ctx.command}: {e}")
 
 @bot.command(help="This command sends a random number between 1 and a random number you want. Usage: $rnum [any number]")
 async def rnum(ctx , *, randeom_num: int = None):
@@ -195,8 +217,9 @@ from the {server_name} server
     """)
     except ValueError:
         await ctx.send(f"{time} is not a number please try again with a valid number ~ {ctx.message.author.mention}")
-    except:
+    except Exception as e:
         await ctx.send(f"oops somthing went wong please try again later {ctx.message.author.mention}")
+        logging.error(f"Error in {ctx.command}: {e}")
 
 @bot.command(help="This command lets you calculate the given expression. Usage: $math [expression]")
 async def math(ctx, *,  expression: str = None):
@@ -213,5 +236,30 @@ async def math(ctx, *,  expression: str = None):
 async def ping(ctx):
     await ctx.send(f"Bot latency: {round(bot.latency * 1000)}ms")
 
+@bot.command(help="Create a poll that users can vote on using reactions. Usage: $vote '[title]' [description]")
+async def vote(ctx, name,*, svote):
+    embend = discord.Embed(title=name, color = discord.Color.random())
+    embend.add_field(name=name, value=svote)
+    vote_massege = await ctx.send(embed=embend)
+    await vote_massege.add_reaction('\N{THUMBS UP SIGN}')
+    await vote_massege.add_reaction('\N{THUMBS DOWN SIGN}')
+
+@bot.command(help="Check the number of thumbs up and thumbs down votes for a given voting poll with the specified embed title. Usage: $check_votes '[embed_title]'")
+async def check_votes(ctx, vote_title):
+    try:
+        async for message in ctx.channel.history():
+            if message.embeds and message.embeds[0].title == vote_title: 
+                thumbs_up = 0
+                thumbs_down = 0
+                for reaction in message.reactions:
+                    if str(reaction.emoji) == '👍':
+                        thumbs_up = reaction.count - 1  # subtract bot's reaction
+                    elif str(reaction.emoji) == '👎':
+                        thumbs_down = reaction.count - 1  # subtract bot's reaction
+                    await ctx.send(f'There are {thumbs_up} thumbs up and {thumbs_down} thumbs down votes and total votes: {reaction.count - 1}.')
+                    return
+        await ctx.send(f"{vote_title} not found, please try again")
+    except Exception as e:
+        logging.error(f"Error in {ctx.command}: {e}")
 
 bot.run(discordtoken)
