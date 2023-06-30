@@ -172,7 +172,7 @@ async def imggen(ctx, *, text: str = None):
             n=1,
             size="256x256",
 
-        )
+        ) 
         await ctx.send(response["data"][0]["url"])
     except Exception as e:
         await ctx.send("nsfw images are not allowed")
@@ -193,6 +193,9 @@ async def weather(ctx, *, city: str = None):
     The Weather in {city} is {weather} , country: {country_name}
     The temperature in {city} is around: {temp}ºF or {int_celsius}°C
     """)
+    except KeyError:
+        await ctx.send(f"sorry the $weather command is currently not working please try again later")
+        logging.error(f"error in {ctx.command}: wong api key? please visit  https://home.openweathermap.org/api_keys for more information")
     except Exception as e:
         logging.error(f"Error in {ctx.command}: {e}")
 
