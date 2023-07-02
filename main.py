@@ -35,6 +35,7 @@ ffmpeg_options = {'options': "-vn"}
 async def on_ready() -> None:
     logging.basicConfig(filename='discordBot.errors', level=logging.ERROR)
     print("Bot is online!")
+    print(f"logged in as: {bot.user.name}, user id is: {bot.user.id}")
     print("error will be logged to a file named discordBot.errors")
     print("-"*100)
 
@@ -66,6 +67,7 @@ async def doc(ctx):
     embed.add_field(name="$ping", value="This Command lets you check the bot latency. Usage: $ping")
     embed.add_field(name="$vote", value="Create a poll that users can vote on using reactions. Usage: $vote '[title]' [description]")
     embed.add_field(name="$check_votes", value="Check the number of thumbs up and thumbs down votes for a given voting poll with the specified embed title. Usage: $check_votes '[embed_title]'")
+    embed.add_field(name="$joke", value="Sends a random Joke. Usage: $joke")
     await ctx.send(embed=embed)
 
 
@@ -262,6 +264,16 @@ async def check_votes(ctx, vote_title):
                     await ctx.send(f'There are {thumbs_up} thumbs up and {thumbs_down} thumbs down votes and total votes: {reaction.count - 1}.')
                     return
         await ctx.send(f"{vote_title} not found, please try again")
+    except Exception as e:
+        logging.error(f"Error in {ctx.command}: {e}")
+
+@bot.command(help="Sends a random Joke Usage: $joke")
+async def joke(ctx) -> None:
+    try:
+        url = requests.get("https://official-joke-api.appspot.com/random_joke")
+        data = url.json()
+        await ctx.send(f"{data['setup']}")
+        await ctx.send(f"punchline: {data['punchline']}")
     except Exception as e:
         logging.error(f"Error in {ctx.command}: {e}")
 
